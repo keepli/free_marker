@@ -1,4 +1,5 @@
 # free_marker
+```properties
 代码生成器
 ui-
    |--   DataBaseUi 是整个程序的进口
@@ -16,3 +17,4 @@ entity-
          Column做为列的元数据封装，其中注意columnKey是用来判断该列是否为主键，是的话则==PRI，而不是true（在DataBaseUtils中定义的）
          Settings用来定义包名，项目名，作者等相关信息，UI界面传入数据会自动将数据传送过来
          DataBase与数据库驱动相关，用来连接数据库和获取元数据
+```
