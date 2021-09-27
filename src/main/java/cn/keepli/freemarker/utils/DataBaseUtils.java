@@ -14,7 +14,7 @@ import java.util.Properties;
  */
 public class DataBaseUtils {
 
-    //获取到mysql中所有的数据库名称
+    //获取到mysql中所有的名称
 
     /**
      * 测试用的
@@ -38,7 +38,8 @@ public class DataBaseUtils {
         props.put ( "user", db.getUserName ( ) );
         props.put ( "password", db.getPassWord ( ) );
         Class.forName ( db.getDriver ( ) );//注册驱动
-        return DriverManager.getConnection ( db.getUrl ( ), props );
+        String url = db.getUrl();
+        return DriverManager.getConnection ( url, props );
     }
 
 
@@ -67,11 +68,22 @@ public class DataBaseUtils {
         Connection connection = getConnection ( db );
         DatabaseMetaData metaData = connection.getMetaData ( );
         //2.获取当前连接数据库的所有表信息
-        ResultSet rs = metaData.getTables ( null, null, null, new String[]{"TABLE"} );
+        String tableNamePattern = PropertiesUtils.customMap.get ( "tableNamePattern" );
+        if (tableNamePattern != null && !"".equals(tableNamePattern) && "ORACLE".equalsIgnoreCase(db.getDbType())){
+            // oracle表名必须大写
+            tableNamePattern = tableNamePattern.toUpperCase();
+        }
+        ResultSet rs;
+        if (db.getDbType().equalsIgnoreCase("MYSQL")){
+            rs = metaData.getTables ( null, null, tableNamePattern, new String[]{"TABLE"} );
+        }else {
+            //获取当前用户下的所有表信息 （1.第二个参数是用户名，oracle必须大写，2.第三个参数是表名，oracle必须大写）
+            rs = metaData.getTables ( null, db.getUserName().toUpperCase(), tableNamePattern, new String[]{"TABLE"} );
+        }
         //封装表数据模型
         List<Table> tableList = new ArrayList<> ( );
         Table tab = null;
-        while (rs.next ( )) {
+        while (rs.next ()) {
             tab = new Table ( );
             String tableName = rs.getString ( "TABLE_NAME" );
             tab.setName ( tableName );//原始表名称

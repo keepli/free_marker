@@ -9,6 +9,7 @@ package cn.keepli.freemarker.ui;
 
 import cn.keepli.freemarker.entity.DataBase;
 import cn.keepli.freemarker.utils.DataBaseUtils;
+import cn.keepli.freemarker.utils.PropertiesUtils;
 
 import javax.swing.*;
 import java.sql.SQLException;
@@ -255,6 +256,9 @@ public class DataBaseUi extends JFrame {
 
 		setLocationRelativeTo(null);
 	}
+
+	// 获取oracle服务名
+	public final String ORACLESERVICENAME = PropertiesUtils.customMap.get ( "oracle_service_name" );
 	
 	private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {
 		if (this.jButton2.getText().equals("下一步")) {
@@ -262,13 +266,13 @@ public class DataBaseUi extends JFrame {
 			this.jButton2.setEnabled(false);
 			final Thread t=new Thread(new Runnable(){
 				  public void run(){
-					  String dbName = jComboBox2.getSelectedItem().toString();
+					  String dbName = jComboBox2.getSelectedItem()==null?ORACLESERVICENAME:jComboBox2.getSelectedItem().toString();
 					  String ip = jTextField3.getText();
 					  String username = jTextField1.getText();
 					  String password = jTextField2.getText();
 					  String dbType = (String)jComboBox1.getSelectedItem();
 					  //进行数据库连接的初始化
-					  DataBase db = new DataBase(dbType,ip,"3306",dbName);
+					  DataBase db = dbType.equalsIgnoreCase("MYSQL")?new DataBase(dbType,ip,"3306",dbName):new DataBase(dbType,ip,"1521",dbName);
 					  db.setUserName(username);
 					  db.setPassWord(password);
 					  CodeUi codeUtil = new CodeUi (db,null);
@@ -292,12 +296,13 @@ public class DataBaseUi extends JFrame {
 		
 		final Thread t=new Thread(new Runnable(){
 			  public void run(){
+				  String dbType = null;
 				  try{
 				  	  String ip = jTextField3.getText();
 					  String username = jTextField1.getText();
 					  String password = jTextField2.getText();
-					  String dbType = (String)jComboBox1.getSelectedItem();
-					  DataBase db = new DataBase(dbType,ip,"3306","");
+					  dbType = (String)jComboBox1.getSelectedItem();
+					  DataBase db = dbType.equalsIgnoreCase("MYSQL")?new DataBase(dbType,ip,"3306",""):new DataBase(dbType,ip,"1521",ORACLESERVICENAME);
 					  db.setUserName(username);
 					  db.setPassWord(password);
 					  List<String> catalogs = DataBaseUtils.getSchemas(db);
@@ -309,6 +314,11 @@ public class DataBaseUi extends JFrame {
 						JOptionPane.showMessageDialog(null, "连接成功", "提示",
 									JOptionPane.DEFAULT_OPTION);
 						jButton2.setText("下一步");
+
+					  if (dbType.equalsIgnoreCase("ORACLE")){
+						  jComboBox2.setModel(new DefaultComboBoxModel(
+								  new String[] { ORACLESERVICENAME }));
+					  }
 					  
 				  }catch (ClassNotFoundException e) {
 						e.printStackTrace();
@@ -317,8 +327,13 @@ public class DataBaseUi extends JFrame {
 						
 				  } catch (SQLException e) {
 						e.printStackTrace();
-						JOptionPane.showMessageDialog(null, "无法连接数据库，请核对连接信息是否正确", "提示",
-								JOptionPane.OK_OPTION);
+						if (dbType.equalsIgnoreCase("MYSQL")){
+							JOptionPane.showMessageDialog(null, "无法连接数据库，请核对连接信息是否正确", "提示",
+									JOptionPane.OK_OPTION);
+						}else {
+							JOptionPane.showMessageDialog(null, "无法连接数据库，请核对连接信息是否正确，当前oracle_service_name="+ORACLESERVICENAME, "提示",
+									JOptionPane.OK_OPTION);
+						}
 				   }catch (Exception e) {
 				     e.printStackTrace();
 				     JOptionPane.showMessageDialog(null, "发生错误", "错误详情请查看error.log",
